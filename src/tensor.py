@@ -156,12 +156,10 @@ class Tensor:
 
     def sum_grad(self,tensor):
 
-        # shape = [1 if axis is None or i in axis else input.shape[i] for i in range(len(input.shape))]
-        # return tensor.val.reshape(shape) + np.zeros_like(input)
         axis = self.weight
         shape = [1 if axis is None or i in axis else self.val.shape[i] for i in range(len(self.val.shape))]
         return tensor.val.reshape(shape) + np.zeros_like(self.val)
-        # return tensor.val * np.ones_like(self.val)
+
 
 
     # * activation functions
@@ -190,43 +188,26 @@ class Tensor:
         #TODO: Implement back-propagation 
         prev_grad = None
 
-        # add current state to cache
-        # copy_tensor = Tensor(self.val)
-        # copy_tensor.ops = self.ops
-        # copy_tensor.weight = self.weight
-        # self.cache.save(copy_tensor)
+
         cache_copy = []
         for i,t in enumerate(reversed(self.cache.tensors)):
-            print(i,t.ops)
             if i == 0 or prev_grad.shape == (1,):
                 # set prev grad as 1 when last tensor in accordance to shape of prev tensor
                 # or when prev grad shape is equals (1,)
                 prev_grad = Tensor(np.ones(self.cache.tensors[i-1].shape),requires_grad=False,inherit=False) 
-                #print(prev_grad)
             else:
                 prev_grad = Tensor(prev_grad,requires_grad=False,inherit=False)
 
-            # print(i,'prev_grad',prev_grad)
             if t.ops == 'sum':
                 t.grad = t.sum_grad(prev_grad)
-                # t.weight = np.ones(t.cache.tensors[i].shape)
             
             if t.ops == 'dot':
-                #print(i,prev_grad)
-                print(t.ops)
                 t.weight,t.grad = t.dot_grad(prev_grad)
-                # print(i,t.grad)
-                # print(i,t.weight)
-            # cache_copy.tensors[i] = t
-            # print(t.grad)
+
             prev_grad = t.grad
             cache_copy.append(t)
-            # print(t)
-            # if i == 0:
-            #     print('recheck')
-            #     for yy in self.cache.tensors:
-            #         print(yy.weight,yy.ops)
-            #print(i,t.grad,t.ops,t.weight)
+
+        self.cache.tensors = cache_copy
 
 
         return self
@@ -278,25 +259,10 @@ if __name__ == "__main__":
     x = Tensor().eye((3,3))
     y = Tensor([[2.0,0,-2.0]])
     z = y.dot(x).sum()
-    # print(z)
-    # print(z.val)
-    #z.history()
-    # print(z.history())
+
     z.backward()
-    # for c in z.cache.tensors:
-    #     print('w',c.weight)
-    #     print('ops',c.ops)
-    #     print('c',c)
-    #     print('---')
-    # z.history()
-
-    # y = Tensor().eye((3,3)).val
-    # x = Tensor([[2.0,0,-2.0]]).val
-    # w = Tensor().ones((1,3)).val
-    # print(x)
-    # print(y)
-
-    # z = np.dot(y,x.T)
-    # print(z)
-    # z = np.dot(z,w)
-    # print(z)
+    
+    # print derivatives
+    for c in z.cache.tensors:
+        # dz/dy and dz/dx
+        print(c.grad,c.weight)
