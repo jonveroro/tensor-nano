@@ -58,7 +58,7 @@ class Tensor:
         # self.cache.save(self)
 
     def __repr__(self):
-        return f"{self.val}"
+        return f"Tensor({self.val})"
 
     @property
     def shape(self):
@@ -94,12 +94,39 @@ class Tensor:
         self.val = np.ones(shape,**kwargs)
         return self
 
+    def uniform(self,shape,**kwargs):
+        assert(shape[0] >0)
+        assert(shape[1]> 0)
+        self.val = np.random.uniform(-1., 1., size=shape)/np.sqrt(np.prod(shape))
+        return self
+
+
     # * TENSOR MAIN OPERATIONS
 
     def unbroadcast(self,out, in_sh):
         # adjoint operation to broadcast is sum. Need to sum all axis with 1 = in_sh[i] < out.shape[i]
         sum_axis = tuple([i for i in range(len(in_sh)) if in_sh[i]==1 and out.shape[i]>1]) if in_sh != (1,) else None
         return out.sum(axis=sum_axis).reshape(in_sh)
+
+    def mul(self,tensor):
+        ops_val = 'mul'
+        self.cache.combine(tensor.cache)
+        self.weight = tensor.val
+        val = self.val * tensor.val
+        return self.__compile(val,self.inherit,ops_val,weight=tensor.val)
+
+    def mul_grad(self,tensor):
+        val_shape = self.val.shape
+        weight_shape = self.weight.shape
+        dx = self.unbroadcast(self.weight*tensor.val,val_shape)
+        dy = self.unbroadcast(self.val*tensor.val,weight_shape)
+        return dy,dx
+
+    # * mean
+    def mean(self):
+        ops_val = 'mean'
+        val = np.array([np.mean(self.val)])
+        return self.__compile(val,self.inherit,ops_val)
 
     # * add
     def add(self,tensor,inherit=True):
@@ -213,7 +240,7 @@ class Tensor:
             if i == 0 or prev_grad.shape == (1,):
                 # set prev grad as 1 when last tensor in accordance to shape of prev tensor
                 # or when prev grad shape is equals (1,)
-                prev_grad = Tensor(np.ones(self.cache.tensors[i-1].shape),requires_grad=False,inherit=False) 
+                prev_grad = Tensor(np.ones(self.cache.tensors[i-1].shape),requires_grad=False,inherit=False)
             else:
                 prev_grad = Tensor(prev_grad,requires_grad=False,inherit=False)
 
@@ -221,21 +248,27 @@ class Tensor:
             if t.ops == 'sum':
                 t.grad = t.sum_grad(prev_grad)
             
-            if t.ops == 'dot':
+            elif t.ops == 'dot':
                 t.weight_grad,t.grad = t.dot_grad(prev_grad)
 
-            if t.ops == 'add':
+            elif t.ops == 'add':
                 t.weight_grad,t.grad = t.add_grad(prev_grad)
 
+            elif t.ops == 'mul':
+                t.weight,t.grad = t.mul_grad(prev_grad)
+
             # * activation ops
-            if t.ops == 'relu':
+            elif t.ops == 'relu':
                 t.grad = t.relu_grad()
                 
-            if t.ops == 'sigmoid':
+            elif t.ops == 'sigmoid':
                 t.grad = t.sigmoid_grad()
 
-            if t.ops == 'tanh':
+            elif t.ops == 'tanh':
                 t.grad = t.tanh_grad()
+
+            else:
+                t.grad = Tensor(np.ones(self.cache.tensors[i-1].shape),requires_grad=False,inherit=False)
 
             prev_grad = t.grad
             cache_copy.append(t)
@@ -278,9 +311,9 @@ class Tensor:
         if len(self.cache.tensors) > 0:
             print('-- Previous States ---')
             for c in self.cache.tensors[:len(self.cache.tensors)]:
-                print(c.shape,c.ops)
+                print(f'id: {c._id}',c.shape,c.ops)
         print('--- Current State ---')
-        print(self.val.shape,self.ops,c.weight)
+        print(self.val.shape,self.ops)
         
 
 
@@ -289,11 +322,9 @@ class Tensor:
 if __name__ == "__main__":
 
     # * test
-    b = Tensor().eye((1,3))
     x = Tensor().eye((3,3))
     y = Tensor([[2.0,0,-2.0]])
-    z = y.dot(x).add(b).sum()
-    print('z =',z)
+    z = y.dot(x).sum()
     z.backward() # * backprop
     
     # print derivatives
@@ -302,5 +333,5 @@ if __name__ == "__main__":
         print(f'--{c.ops}---')
         print(c.grad) # dz/dy 
         print(c.weight_grad) # dz/dx
-
+    
 
