@@ -9,7 +9,7 @@
 '''
 
 # TODO: Create grad tracking per tensor object
-
+import time
 import numpy as np
 from copy import deepcopy,copy
 from activations import activations
@@ -151,31 +151,31 @@ class Tensor(Ops):
     def eye(self,shape,**kwargs):
         assert(shape[0] >0)
         assert(shape[1]> 0)
-        self.val = np.eye(shape[0],shape[1],**kwargs)
+        self.val = np.eye(shape[0],shape[1],**kwargs).astype(np.float32)
         return self
 
     def random(self,shape,**kwargs):
         assert(shape[0] >0)
         assert(shape[1]> 0)
-        self.val = np.random.rand(shape[0],shape[1],**kwargs)
+        self.val = np.random.rand(shape[0],shape[1],**kwargs).astype(np.float32)
         return self
 
     def zeros(self,shape,**kwargs):
         assert(shape[0] >0)
         assert(shape[1]> 0)
-        self.val = np.zeros(shape,**kwargs)
+        self.val = np.zeros(shape,**kwargs).astype(np.float32)
         return self
 
     def ones(self,shape,**kwargs):
         assert(shape[0] >0)
         assert(shape[1]> 0)
-        self.val = np.ones(shape,**kwargs)
+        self.val = np.ones(shape,**kwargs).astype(np.float32)
         return self
 
     def uniform(self,shape,**kwargs):
         assert(shape[0] >0)
         assert(shape[1]> 0)
-        self.val = np.random.uniform(-1., 1., size=shape)/np.sqrt(np.prod(shape))
+        self.val = np.random.uniform(-1., 1., size=shape)/np.sqrt(np.prod(shape)).astype(np.float32)
         return self
 
 
@@ -212,33 +212,42 @@ class Tensor(Ops):
         __get_traversal(self)
         # * apply backward steps for tensors
         self._sequence = sequence
-
+        # print(len(sequence))
         # * create default grad val in shape of current value
         self.grad =  np.ones(self.val.shape,dtype=self.val.dtype)
         # * backward prop loop
         for t in reversed(sequence):
-            t._backward()
+            if t.ops != 'init':
+                t._backward()
     
 
     def history(self):
         print('----Tensor state history---')
         for t in reversed(self._sequence):
             print(t.shape,t.ops)
+            
 
 
 
 
 if __name__ == "__main__":
+
+    start_time = time.time()
     x = Tensor().eye((3,3))
     y = Tensor([[2.0,0,-2.0]])
     b = Tensor().eye((1,1))
-    z = y.dot(x).add(b).sum().sigmoid()
+    # x = Tensor().random((10,10))
+    # y = Tensor().random((1,10))
+    # b = Tensor().random((1,1))
+    z = y.dot(x).add(b).sum().relu()
     print('z',z)
     z.backward()
+    print("--- %s seconds ---" % (time.time() - start_time))
     print('dz',z.grad)
     print('db',b.grad)
     print('dy',y.grad)
     print('dx',x.grad)
-
+    #z.history()
+    
     
 
