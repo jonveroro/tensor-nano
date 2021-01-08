@@ -21,6 +21,19 @@ class Ops:
     def __init__(self):
         self._backward = lambda: None
 
+
+    def sub(self,weight):
+        out =Tensor(self.val-weight.val,(self,weight),'sub')
+        self.weight = weight
+
+        def __backward():
+            self.grad = self.unbroadcast(out.grad,self.val.shape)
+            weight.grad = self.unbroadcast(-out.grad,self.weight.shape)
+
+        out._backward = __backward
+        return out
+            
+
     def dot(self,weight):
 
         out = Tensor(self.val.dot(weight.val), (self, weight), 'dot')
@@ -193,13 +206,11 @@ class Tensor(Ops):
         return sequence
 
     def backward(self):
-
-        assert(self.val.shape == (1,))
-
+        assert(self.shape == (1,))
         # * get tensor traversal sequence
         sequence = []
         traversed = []
-
+        # * tensor traversal function
         def __get_traversal(tensor):
             if tensor not in traversed:
                 traversed.append(tensor)
@@ -239,7 +250,7 @@ if __name__ == "__main__":
     # x = Tensor().random((10,10))
     # y = Tensor().random((1,10))
     # b = Tensor().random((1,1))
-    z = y.dot(x).add(b).sum().relu()
+    z = y.dot(x).add(b).sum()
     print('z',z)
     z.backward()
     print("--- %s seconds ---" % (time.time() - start_time))
