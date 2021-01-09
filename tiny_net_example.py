@@ -11,7 +11,7 @@ import src.optim as optim
 
 
 # * test data
-X, Y = datasets.make_moons(2000, noise=0.05)
+X, Y = datasets.make_moons(1000, noise=0.05)
 print(X.shape)
 print(Y.shape)
 
@@ -26,11 +26,11 @@ class TinyNet:
         a = x.dot(self.l1).relu().dot(self.l2).sigmoid()
         return a
 
-epochs = 1500
+epochs = 1000
 batch_size = 32
 
 model = TinyNet()
-opt = optim.SGD([model.l1, model.l2], lr=0.0001)
+opt = optim.Adam([model.l1, model.l2],lr=0.0001)
 verbose = 1
 
 print('Traning simple neural net')
