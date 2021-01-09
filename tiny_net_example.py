@@ -1,49 +1,20 @@
-# Tensor Nano
-This is a open source deep learning library project. Currently In progress.
-This is mainly for educational purposes.
+'''
+    This is a simple example on how to train a basic neural network
+'''
 
-### Features
-1. Autograd Implementation
-2. Implements tensor objects like PyTorch
-3. Basic tensor operations - dot,mul,add,mean,sum
-4. Basic activation functions - relu,sigmoid,tanh
-
-### Examples
-
-```python
-x = Tensor().eye((3,3),requires_grad=True)
-y = Tensor([[2.0,0,-2.0]],requires_grad=True)
-b = Tensor().eye((1,1),requires_grad=True)
-
-z = y.dot(x).add(b).mean()
-print('z',z)
-z.backward()
-
-print(b.grad) # dz/db
-print(y.grad) # dz/dy
-print(x.grad) # dz/dx
-
-```
-
-### PyTorch Example
-
-```python
-import torch
-x = torch.eye(3, requires_grad=True)
-y = torch.tensor([[2.0,0,-2.0]], requires_grad=True)
-b = torch.eye(1, requires_grad=True)
-z = y.dot(x).add(b).mean()
-z.backward()
-
-print(b.grad)  # dz/db
-print(x.grad)  # dz/dx
-print(y.grad)  # dz/dy
+from sklearn import datasets
+import numpy as np
+from inspect import signature
+from copy import deepcopy
+from src.tensor import Tensor
+import src.optim as optim
 
 
-```
+# * test data
+X, Y = datasets.make_moons(2000, noise=0.05)
+print(X.shape)
+print(Y.shape)
 
-### Tiny Neural Net Example
-```python
 # * Model class
 class TinyNet:
 
@@ -95,15 +66,3 @@ for e in range(0,epochs):
         print(f'\rEpoch: {e} Loss: {loss_main}', end='')
 
 print('\nDone Training')
-```
-
-
-### TODO
-1. Support GPU
-2. Support Conv1D, Conv2D, LTSM, RNN, etc operations
-3. Improve performance.
-4. Fix Bugs
-5. Create SOTA model implementations
-6. Create performance unittesting
-
-

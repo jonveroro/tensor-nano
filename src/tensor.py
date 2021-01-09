@@ -12,7 +12,7 @@
 import time
 import numpy as np
 from copy import deepcopy,copy
-from activations import activations
+#from activations import activations
 
 class Ops:
     '''
@@ -115,30 +115,32 @@ class Ops:
 
     # * activations
     def relu(self):
-        out = Tensor(activations().relu(self.val),(self,deepcopy(self)),'relu')
+        out = Tensor(np.maximum(0, self.val),(self,deepcopy(self)),'relu')
         # * backward
         def __backward():
-            self.grad = activations().d_relu(out.val)
+            self.grad = np.where(out.val <= 0, 0, 1)
 
         out._backward = __backward
         return out
 
     
     def sigmoid(self):
-        out = Tensor(activations().sigmoid(self.val),(self,deepcopy(self)),'sigmoid')
+        val = 1 / (1 + np.exp(-self.val))
+        out = Tensor(val,(self,deepcopy(self)),'sigmoid')
         # * backward
         def __backward():
-            self.grad = activations().d_sigmoid(out.val)
+            self.grad = out.val * (1 - out.val)
             assert(self.grad.shape == self.val.shape)
 
         out._backward = __backward
         return out
 
     def tanh(self):
-        out = Tensor(activations().tanh(self.val),(self,deepcopy(self)),'tanh')
+        t=(np.exp(self.val)-np.exp(-self.val))/(np.exp(self.val)+np.exp(-self.val))
+        out = Tensor(t,(self,deepcopy(self)),'tanh')
         # * backward
         def __backward():
-            self.grad = activations().d_tanh(out.val)
+            self.grad = 1-out.val**2
             assert(self.grad.shape == self.val.shape)
 
         out._backward = __backward
