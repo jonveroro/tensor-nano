@@ -7,7 +7,12 @@ import numpy as np
 class SGD:
     def __init__(self,params,lr=0.001):
         self.params = params
+        self.zero_grad()
         self.lr = lr
+
+    def zero_grad(self):
+        for p in self.params:
+            p.grad = 0
 
     def step(self):
         for t in self.params:
@@ -18,6 +23,7 @@ class Adam:
 
     def __init__(self,params,lr=0.0001,b1=0.9,b2=0.999,e=1e-8):
         self.params = params
+        self.zero_grad()
         self.lr = lr # learning rate
         self.b1 = b1 # beta 1
         self.b2 = b2 # beta 2
@@ -32,6 +38,9 @@ class Adam:
             self.v.append(n)
             self.s.append(n)
 
+    def zero_grad(self):
+        for p in self.params:
+            p.grad = 0
 
     def step(self):
         self.t +=1
