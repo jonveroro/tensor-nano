@@ -1,4 +1,6 @@
 
+# TODO: Create Other Optimizers
+
 from copy import deepcopy
 
 class SGD:
@@ -7,9 +9,6 @@ class SGD:
         self.lr = lr
 
     def step(self):
-        n_params = self.params
-        for e,t in enumerate(n_params):
+        for t in self.params:
             t.val -= t.grad * self.lr
-            n_params[e] = t
 
-        self.params = deepcopy(n_params)
